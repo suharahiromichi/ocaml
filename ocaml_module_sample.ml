@@ -7,13 +7,17 @@
 module Pool :
 sig
   exception Empty
-  type 'a stack = None | Some of 'a
-  val empty : 'a stack
-  val set : 'a -> 'a stack
-  val get : 'a stack -> 'a
+  type 'a pool =
+    | None
+    | Some of 'a
+  val empty : 'a pool
+  val set : 'a -> 'a pool
+  val get : 'a pool -> 'a
 end = struct
   exception Empty
-  type 'a stack = None | Some of 'a
+  type 'a pool =
+    | None
+    | Some of 'a
   let empty = None
   let set x = Some x
   let get = function 
@@ -37,7 +41,9 @@ Printf.printf "%d\n" a3;;
 module Pool :
 sig
   exception Empty
-  type 'a pool = None | Some of 'a
+  type 'a pool =
+    | None
+    | Some of 'a
   val empty : 'a pool
   val set : 'a -> 'a pool
   val get : 'a pool -> 'a
@@ -48,7 +54,9 @@ end;;
 (* module Name = struct ... end;; *)
 module Pool = struct
   exception Empty
-  type 'a pool = None | Some of 'a
+  type 'a pool =
+    | None
+    | Some of 'a
   let empty = None
   let set x = Some x
   let get = function 
