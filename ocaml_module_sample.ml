@@ -7,18 +7,18 @@
 module Pool :
 sig
   exception Empty
-  type 'a stack = SNil | SCell of 'a
+  type 'a stack = None | Some of 'a
   val empty : 'a stack
   val set : 'a -> 'a stack
   val get : 'a stack -> 'a
 end = struct
   exception Empty
-  type 'a stack = SNil | SCell of 'a
-  let empty = SNil
-  let set x = SCell x
+  type 'a stack = None | Some of 'a
+  let empty = None
+  let set x = Some x
   let get = function 
-    | SNil -> raise Empty
-    | SCell x -> x
+    | None -> raise Empty
+    | Some x -> x
 end;;
 let s1 = Pool.set 1;;
 let s2 = Pool.set 2;;
@@ -37,7 +37,7 @@ Printf.printf "%d\n" a3;;
 module Pool :
 sig
   exception Empty
-  type 'a pool = SNil | SCell of 'a
+  type 'a pool = None | Some of 'a
   val empty : 'a pool
   val set : 'a -> 'a pool
   val get : 'a pool -> 'a
@@ -48,12 +48,12 @@ end;;
 (* module Name = struct ... end;; *)
 module Pool = struct
   exception Empty
-  type 'a pool = SNil | SCell of 'a
-  let empty = SNil
-  let set x = SCell x
+  type 'a pool = None | Some of 'a
+  let empty = None
+  let set x = Some x
   let get = function 
-    | SNil -> raise Empty
-    | SCell x -> x
+    | None -> raise Empty
+    | Some x -> x
 end;;
 (* end *)
 (* --------------------------------------------- *)
