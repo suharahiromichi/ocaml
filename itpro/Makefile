@@ -17,9 +17,14 @@ interpret:	lexer.ml parser.ml syntax.ml interpret.ml
 compile:	lexer.ml parser.ml syntax.ml compile.ml
 	ocamlmktop syntax.ml parser.mli parser.ml lexer.ml compile.ml -o compile
 
+test:
+	./compile -no-version -noprompt < sum.myc > sum.ml
+	ocamlc sum.ml -o sum
+
 clean:;
 	rm -f myc.top interpret compile
 	rm -f lexer.ml parser.ml
+	rm -f sum.ml sum
 	rm -f *.mli *.mlo *.cmi *.cmo
 
 # END
