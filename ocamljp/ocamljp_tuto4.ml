@@ -49,31 +49,73 @@ https://osiire.hatenablog.com/entry/20090510/1241957550
 
 ### 多相バリアントの基本
  *)
-type card = Joker | Num of int;;
+type card =
+  | Joker
+  | Num of int
+;;
 (* type card = Joker | Num of int *)
+let c = Joker;;
 
-type in_data = Str of string | Num of int;;
+type in_data =
+  | Str of string
+  | Num of int
+;;
 (* type in_data = Str of string | Num of int *)
 
 let get_number = function    
   | Num i -> i 
   | _ -> failwith "not a number";;          (* 戻り値に影響しない。 *)
 (* val get_number : in_data -> int = <fun> *)
+
 (* card 型では使えない。 *)
+get_number (Num 123 : card);;               (* コンパイルエラー *)
+get_number (Num 123 : in_data);;            (* - : int = 123 *)
 
-type card = [ `Jorker | `Num of int ];;     
-(* type card = [ `Jorker | `Num of int ] *)
+(* タグを完全に記述すれば、card型で推論される。 *)
+let get_number'' = function
+  | Joker -> 0
+  | Num i -> i
+;;
+(* val get_number'' : card -> int = <fun> *)
+get_number'' (Num 123 : card);;
+get_number'' Joker;;
 
-type in_data = [ `Str of string | `Num of int ];; (* 多相バリアント型 *)
-(* type in_data = [ `Num of int | `Str of string ] *)
+(* 型注釈で逃げてもよいが。 *)
+let get_number' : card -> int = function
+  | Num i -> i 
+  | _ -> 0
+;;
+(* val get_number' : card -> int = <fun> *)
+get_number' (Num 123 : card);;
+get_number' Joker;;
+
+(**
+いずれの場合も、get_number と  get_number' の二つの関数ができてしまう。
+
+求めるものは、card であっても in_data であっても Num 123 を受け取れる関数である。
+ *)
 
 let get_number = function (* 多相バリアント型の引数を受け取る *)
   | `Num i -> i
   | _ -> failwith "not a number";;
 (* val get_number : [> `Num of 'a ] -> 'a = <fun> *)
+(** 
+get_number 関数は `Num タグを持つ型なら何でもよい（スーパータイプ）ので、
+card型でもin_data型でもどちらでもよいことになる。
+*)
 
-get_number (`Num 3);;         (* - : int = 3 *)
-get_number (`Joker);;         (* Exception: Failure "not a number". *)
+get_number (`Num 123 : card);;               (* - : int = 123 *)
+get_number (`Num 123 : in_data);;            (* - : int = 123 *)
+
+(**
+補足説明：
+
+Coq ではタグがモジュールでユニークでないといけないのに対して、Ocamlは
+型に対してユニークであればよいので、タグから型を推論でない場合がある。
+
+このことを逆にいうと、Ocaml の場合、タグが同じなら、別の型でも受け取り
+たくなるわけである（多相）。
+*)
 
 (**
 ### 要点
@@ -250,7 +292,8 @@ CardEx.next `King;; (* - : [> `Jack | `Joker | `King | `Num of int | `Queen ] = 
 - CardExという新しい構造を定義できています。
  *)
 
-(** ### Expression Problem
+(**
+### Expression Problem
 
    静的な型付けの下で、場合分けのデータ構造に対して、新しい場合分けと
    その場合に対する新しい処理を、元のソースコードに手を加えることなく
