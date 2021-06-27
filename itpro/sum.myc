@@ -1,0 +1,11 @@
+{
+  zero = 0;
+  minus_one = -1;
+  sum = 0;
+  n = 10;
+  while (n > zero) {
+    sum = sum + n;
+    n = n + minus_one;
+  };
+  print sum;
+}
