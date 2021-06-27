@@ -15,9 +15,8 @@ interpret:	lexer.ml parser.ml syntax.ml interpret.ml
 	ocamlmktop syntax.ml parser.mli parser.ml lexer.ml interpret.ml -o interpret
 
 clean:;
-	rm -f myc.top lexer.ml parser.ml
-	rm -f lexer.mli lexer.mlo lexer.cmi lexer.cmo
-	rm -f parser.mli parser.mlo parser.cmi parser.cmo
-	rm -f syntax.mli syntac.mlo syntax.cmi syntax.cmo
+	rm -f myc.top interpret
+	rm -f lexer.ml parser.ml
+	rm -f *.mli *.mlo *.cmi *.cmo
 
 # END
