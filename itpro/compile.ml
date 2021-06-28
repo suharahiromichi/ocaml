@@ -13,9 +13,9 @@ let rec compile s = match s with
      compile s2;
      Printf.printf "done;\n"
   | Seq(ss) ->
-     Printf.printf "(\n";
+     (*     Printf.printf "(\n"; *)
      List.iter compile ss;
-     Printf.printf ")\n"
+     (*     Printf.printf ")\n" *)
   | Print(x) ->
      Printf.printf "Printf.printf \"%%d\\n\"\n";
      Printf.printf "  (Hashtbl.find table \"%s\");" x
