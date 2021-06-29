@@ -21,7 +21,7 @@ fun x y -> if true then x else y ;;   (* - : 'a -> 'a -> 'a = <fun> *)
 (* if式のthenとelseの部分は同じ型になることを利用 *)
 
 (**
-## コード
+## type-directed 部分評価
  *)
 let counter = ref 0
 let gensym () =
@@ -46,7 +46,7 @@ let ( ^-> ) (t1 : 'a typ) (t2 : 'b typ) : ('a -> 'b) typ =
     fun x ->
       str2val t2
         (Printf.sprintf
-           "%s %s"
+           "(%s %s)"                        (* 第16回で修正 *)
            s
            (val2str t1 x)))
 
