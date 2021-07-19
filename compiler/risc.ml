@@ -34,6 +34,7 @@ end;;
 
 module Emulator = struct
   let zero = 0n;;
+  let lsb  = shift_left (of_int 1) 31;;
   
   let ir = ref zero;;
   let pc = ref zero;;
@@ -53,60 +54,80 @@ module Emulator = struct
   mem.(3) <- of_int 0x30;;
 
   let inc x = x := succ !x;;
-  let fetch y x = y := mem.(to_int x);;
-
+  
   let exec () =
-    fetch ir !pc;                           (* IR <- M[PC] *)
-    inc pc;                                 (* PC <- PC + 1 *)
-    let a  = to_int (shift_right_logical !ir 24) land 0xF in
-    let b  = to_int (shift_right_logical !ir 20) land 0xF in
-    let c  = to_int (logand !ir (of_int 0xF)) in
-    let op = to_int (shift_right_logical !ir 16) land 0xF in
-    let im = to_int (logand !ir (of_int 0xFFFF)) in
-    let p  = to_int (shift_right_logical !ir 31) in
-    let q  = to_int (shift_right_logical !ir 30) land 0x1 in
-    let v  = to_int (shift_right_logical !ir 28) land 0x1 in
-    
-    Printf.printf "a=%x\n" a;
-    Printf.printf "b=%x\n" b;
-    Printf.printf "c=%x\n" c;
-    Printf.printf "op=%x\n" op;
-    Printf.printf "im=%x\n" im;
-    Printf.printf "p=%x\n" p;
-    Printf.printf "q=%x\n" q;
-    Printf.printf "v=%x\n" v;
-    
-    if (p = 0) then
-      begin
-        fetch rb (of_int b);
-        
-        if (q = 0) then
-          fetch rc (of_int c)
-        else if (v = 0) then
-          rc := of_int im
-        else
-          rc := add (of_int im) (shift_left (of_int 0xFFFF) 16);
-        
-        match (Isa.to_opc op) with
-        | Isa.Imov -> ()
-        | Isa.Ilsl -> ()
-        | Isa.Iasr -> ()
-        | Isa.Iror -> ()
-        | Isa.Iand -> ()
-        | Isa.Iann -> ()
-        | Isa.Iior -> ()
-        | Isa.Ixor -> ()
-        | Isa.Iadd -> ()
-        | Isa.Isub -> ()
-        | Isa.Imul -> ()
-        | Isa.Idiv -> ()
-        | Isa.Inop -> ()
-      end
-    else
-      if (q = 0) then
-        ()
+    begin
+      ir := mem.(to_int !pc);               (* IR <- M[PC] *)
+      inc pc;                               (* PC <- PC + 1 *)
+      let a  = to_int (shift_right_logical !ir 24) land 0xF in
+      let b  = to_int (shift_right_logical !ir 20) land 0xF in
+      let c  = to_int (logand !ir (of_int 0xF)) in
+      let op = to_int (shift_right_logical !ir 16) land 0xF in
+      let im = to_int (logand !ir (of_int 0xFFFF)) in (* 16bit *)
+      let p  = to_int (shift_right_logical !ir 31) land 0x1 in
+      let q  = to_int (shift_right_logical !ir 30) land 0x1 in
+      let u  = to_int (shift_right_logical !ir 29) land 0x1 in
+      let v  = to_int (shift_right_logical !ir 28) land 0x1 in
+      let off = to_int (logand !ir (of_int 0xFFFFF)) in (* 20bit *)
+      
+      Printf.printf "a=%x\n" a;
+      Printf.printf "b=%x\n" b;
+      Printf.printf "c=%x\n" c;
+      Printf.printf "op=%x\n" op;
+      Printf.printf "im=%x\n" im;
+      Printf.printf "p=%x\n" p;
+      Printf.printf "q=%x\n" q;
+      Printf.printf "v=%x\n" v;
+      
+      if (p = 0) then                         (* 0quv *)
+        begin
+          rb := r.(b);
+          if (q = 0) then
+            rc := r.(c)
+          else if (v = 0) then
+            rc := of_int im
+          else
+            rc := add (of_int im) (shift_left (of_int 0xFFFF) 16);
+          
+          let tmp = match (Isa.to_opc op) with
+            | Isa.Imov ->
+               if (u = 0) then
+                 !rc
+               else
+                 !rh
+            | Isa.Ilsl -> shift_left !rb (to_int !rc)
+            | Isa.Iasr -> shift_right !rb (to_int !rc)
+            | Isa.Iror -> zero              (* 未実装 *)
+            | Isa.Iand -> logand !rb !rc
+            | Isa.Iann -> logand !rb (lognot !rc)
+            | Isa.Iior -> logor !rb !rc
+            | Isa.Ixor -> logxor !rb !rc
+            | Isa.Iadd -> add !rb !rc
+            | Isa.Isub -> sub !rb !rc
+            | Isa.Imul -> mul !rb !rc
+            | Isa.Idiv -> div !rb !rc
+            | Isa.Inop -> r.(a) in
+          begin
+            r.(a) <- tmp;
+            z := tmp = zero;
+            n := (logand tmp lsb) = zero
+          end
+        end
       else
-        ()
+        if (q = 0) then                       (* 10uv *)
+          let adr = (to_int r.(b) + off) / 4 in
+          if (u = 0) then                     (* LOAD *)
+            begin
+              let tmp = mem.(adr) in
+              r.(a) <- tmp;
+              z := tmp = zero;
+              n := (logand tmp lsb) = zero
+            end
+          else                                (* STORE *)
+            mem.(adr) <- r.(a)
+        else                                  (* 11uv *)
+          ()
+    end
   ;;
   
   let to_hl i =

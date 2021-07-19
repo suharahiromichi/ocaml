@@ -18,7 +18,6 @@ module Emulator : sig
   val mem : nativeint array;;                   (* memory *)
   
   val inc : nativeint ref -> unit;;
-  val fetch : nativeint ref -> nativeint -> unit;;
   val exec : unit -> unit;;
 
   val to_hl : nativeint -> int * int;;
