@@ -1,7 +1,7 @@
 open Nativeint;;
 
 module Isa = struct
-  type opc =
+  type ric =                               (* Register instructions *)
     | Imov
     | Ilsl
     | Iasr
@@ -12,11 +12,11 @@ module Isa = struct
     | Ixor
     | Iadd
     | Isub
+    | Icmp
     | Imul
-    | Idiv
-    | Inop;;
+    | Idiv;;
   
-  let to_opc = function
+  let to_ric = function
     |  0 -> Imov
     |  1 -> Ilsl
     |  2 -> Iasr
@@ -28,8 +28,113 @@ module Isa = struct
     |  8 -> Iadd
     |  9 -> Isub
     | 10 -> Imul
-    | 11 -> Idiv
-    |  _ -> Inop;;
+    | 11 -> Idiv;;
+  
+  let from_ric = function
+    | Imov ->  0
+    | Ilsl ->  1
+    | Iasr ->  2
+    | Iror ->  3
+    | Iand ->  4
+    | Iann ->  5
+    | Iior ->  6
+    | Ixor ->  7
+    | Iadd ->  8
+    | Isub ->  9
+    | Icmp ->  9                            (* SUB *)
+    | Imul -> 10
+    | Idiv -> 11;;
+  
+  type mic =
+    | Ildw
+    | Istw;;
+  
+  let to_mic = function
+    | 0 -> Ildw
+    | 1 -> Istw;;
+
+  let from_mic = function
+    | Ildw -> 0
+    | Istw -> 1;;
+
+  type bic =
+    | Ibmi
+    | Ibeq
+    (*  | Ibcs  *)
+    (*  | Ibvs  *)
+    (*  | Ibls  *)
+    | Iblt
+    | Ible
+    | Ib  
+    | Ibpl
+    | Ibne
+    (*  | Ibcc  *)
+    (*  | Ibvc  *)
+    (*  | Ibhi  *)
+    | Ibge
+    | Ibgt;;
+  
+  let to_bic = function
+    |  0 -> Ibmi
+    |  1 -> Ibeq
+    (*  | Ibcs  *)
+    (*  | Ibvs  *)
+    (*  | Ibls  *)
+    |  5 -> Iblt
+    |  6 -> Ible
+    |  7 -> Ib  
+    |  8 -> Ibpl
+    |  9 -> Ibne
+    (*  | Ibcc  *)
+    (*  | Ibvc  *)
+    (*  | Ibhi  *)
+    | 13 -> Ibge
+    | 14 -> Ibgt;;
+  
+  let from_bic = function
+    | Ibmi ->  0
+    | Ibeq ->  1
+    (*  | Ibcs  *)
+    (*  | Ibvs  *)
+    (*  | Ibls  *)
+    | Iblt ->  5
+    | Ible ->  6
+    | Ib   ->  7
+    | Ibpl ->  8
+    | Ibne ->  9
+    (*  | Ibcc  *)
+    (*  | Ibvc  *)
+    (*  | Ibhi  *)
+    | Ibge -> 13
+    | Ibgt -> 14;;
+  
+  type register =
+    | R of int
+    | D;;                                   (* dummy *)
+  
+  type instr =
+    | F0' of ric * register * register
+    | F0  of ric * register * register * register
+    | F1' of ric * register * int
+    | F1  of ric * register * register * int
+    | F2  of mic * register * register * int
+    | F3  of bic * register
+    | F3' of bic * int;;
+  
+  type statement = string * instr;;
+end;;
+
+module Asm = struct
+  let test () =
+      let imov = "label", Isa.F0' (Isa.Imov, Isa.R 0, Isa.R 1) in
+      let imov = "label", Isa.F1' (Isa.Imov, Isa.R 0, 1234) in
+      let iadd = "label", Isa.F0  (Isa.Iadd, Isa.R 0, Isa.R 1, Isa.R 2) in
+      let iadd = "label", Isa.F1  (Isa.Iadd, Isa.R 0, Isa.R 1, 1234) in
+      let ildw = "label", Isa.F2  (Isa.Ildw, Isa.R 0, Isa.R 1, 1234) in
+      let istw = "label", Isa.F2  (Isa.Istw, Isa.R 0, Isa.R 1, 1234) in
+      let ib   = "label", Isa.F3  (Isa.Ib,   Isa.R 0) in
+      let ib   = "label", Isa.F3' (Isa.Ib,   1234) in
+      ();;
 end;;
 
 module Emulator = struct
@@ -89,7 +194,7 @@ module Emulator = struct
           else
             rc := add (of_int im) (shift_left (of_int 0xFFFF) 16);
           
-          let tmp = match (Isa.to_opc op) with
+          let tmp = match (Isa.to_ric op) with
             | Isa.Imov ->
                if (u = 0) then
                  !rc
@@ -105,8 +210,7 @@ module Emulator = struct
             | Isa.Iadd -> add !rb !rc
             | Isa.Isub -> sub !rb !rc
             | Isa.Imul -> mul !rb !rc
-            | Isa.Idiv -> div !rb !rc
-            | Isa.Inop -> r.(a) in
+            | Isa.Idiv -> div !rb !rc in
           begin
             r.(a) <- tmp;
             z := tmp = zero;

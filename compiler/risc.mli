@@ -1,8 +1,22 @@
 open Nativeint;;
 
 module Isa : sig
-  type opc;;
-  val to_opc : int -> opc;;
+  type ric;;                                (* Register instructions *)
+  val to_ric : int -> ric;;
+  val from_ric : ric -> int;;
+  type mic;;                                (* Memory instructions *)
+  val to_mic : int -> mic;;
+  val from_mic : mic -> int;;
+  type bic;;                                (* Branch instructions *)
+  val to_bic : int -> bic;;
+  val from_bic : bic -> int;;
+  type register;;
+  type instr;;
+  type statement;;
+end;;
+
+module Asm : sig
+  val test : unit -> unit;;
 end;;
 
 module Emulator : sig
