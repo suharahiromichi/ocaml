@@ -14,8 +14,8 @@ F2      STW  Ra,Rb,off                  101_
         
 F3      BEQ  Ra                         1100    cond
 F3'     BEQ  off                        1110    cond
-F3      BL   Ra                         1101    cond=7
-F3'     BL   off                        1111    cond=7
+FBL     BL   Ra                         1101    cond=7
+FBL'    BL   off                        1111    cond=7
 
 
 op
@@ -50,5 +50,11 @@ cond
 13      BGE     ~(N≠V)                 ~N              実装 ≧
 14      BGT     ~((N≠V)|Z)             ~(N|Z)          実装 >
 15      _       false                   false           ー
+
+
+PROCEDURE Put0(op, a, b, c: LONGINT);
+PROCEDURE Put1(op, a, b, im: LONGINT);
+PROCEDURE Put2(op, a, b, off: LONGINT);
+PROCEDURE Put3(op, cond, off: LONGINT);
 
 END
