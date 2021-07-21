@@ -1,0 +1,52 @@
+インストラクション・セット・サマリ
+
+N.Wirth Compiler Construction の第9章の RISC のサブセット
+
+
+F0'     MOV  Ra,Rc                      00__    op=0
+F0      ADD  Ra,Rb,Rc                   00__    op
+
+F1'     MOV  Ra,im                      01__    op=0
+F1      ADD  Ra,Rb,im                   01__    op
+
+F2      LDW  Ra,Rb,off                  100_
+F2      STW  Ra,Rb,off                  101_
+        
+F3      BEQ  Ra                         110_    cond
+F3'     BEQ  off                        111_    cond
+
+
+op
+0       MOV
+1       LSL
+2       ASR
+3       ROR
+4       AND
+5       ANN
+6       IOR
+7       XOR
+8       ADD
+9       SUB
+10      MUL
+11      DIV
+
+
+cond
+0       BMI     N                       N               実装
+1       BEQ     Z                       Z               実装 =
+2       BCS     C                       false           ー
+3       BVS     V                       false           ー
+4       BLS     ~C|Z                    Z               ー
+5       BLT     N≠V                    N               実装 <
+6       BLE     (N≠V)|Z                N|Z             実装 ≦
+7       B       true                    true            実装
+8       BPL     ~N                      ~N              実装
+9       BNE     ~Z                      ~Z              実装 ≠
+10      BCC     ~C                      true            ー
+11      BVC     ~V                      true            ー
+12      BHI     ~(~C|Z)                 ~Z              ー
+13      BGE     ~(N≠V)                 ~N              実装 ≧
+14      BGT     ~((N≠V)|Z)             ~(N|Z)          実装 >
+15      _       false                   false           ー
+
+END
