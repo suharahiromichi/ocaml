@@ -14,7 +14,15 @@ module Isa : sig
   type instr;;
 end;;
 
+module Dump : sig
+  val to_hl : nativeint -> int * int;;
+  val print_mem : nativeint array -> unit;;
+end;;
+
 module Assembler : sig
+  val src : Isa.instr list;;
+  val asm1 : Isa.instr -> nativeint;;
+  val asm : Isa.instr list -> nativeint list;;
   val test : unit -> unit;;
 end;;
 
@@ -32,12 +40,9 @@ module Emulator : sig
   
   val inc : nativeint ref -> unit;;
   val exec : unit -> unit;;
-
-  val to_hl : nativeint -> int * int;;
-
+  
   val print_reg : unit -> unit;;
-  val print_mem : unit -> unit;;
-
+  
   val test : unit -> unit;;
 end;;
 

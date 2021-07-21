@@ -123,26 +123,85 @@ module Isa = struct
     | F2 of mic * register * register * int
     | F3 of bic * int
     | FL of bic * int;;              (* call / BL : Branch and Link *)
+end;;
+
+module Dump = struct
+  let to_hl i =
+    let h = to_int (shift_right_logical i 16) in
+    let l = to_int (logand i (of_int 0xFFFF)) in
+    (h, l);;
+
+  let to_hex i = 
+    match (to_hl i) with
+    | (a, b) -> Printf.sprintf "%04X%04X" a b;;
   
-  type statement = instr;;
+  let print_mem mem =
+    begin
+      for i = 0 to Array.length mem - 1 do
+        if i mod 8 == 0 then
+          Printf.printf "%04X " i;
+        Printf.printf "%s " (to_hex mem.(i));
+        if (i + 1) mod 8 == 0 then
+          Printf.printf "\n";
+      done;
+      Printf.printf "\n"
+    end
 end;;
 
 open Isa;;
 
 module Assembler = struct
+  let sb = R 13;;
+  let src = [
+      F1 (Imov, sb, D, 16);
+      F2 (Ildw, R 0, sb,  0);               (* x *)
+      F2 (Ildw, R 1, sb,  1);               (* y *)
+      F0 (Imul, R 0, R 0, R 1);             (* x := x * y *)
+      F2 (Ildw, R 1, sb,  2);               (* z *)
+      F2 (Ildw, R 2, sb,  3);               (* w *)
+      F0 (Imul, R 1, R 1, R 2);             (* z := z * w *)
+      F0 (Iadd, R 0, R 0, R 1);             (* x := x + z *)
+      F2 (Istw, R 0, sb,  4)                (* u := x *)
+    ];;
+  
+  let build p a b op c =
+    add (shift_left (of_int p) 28)
+      (add (shift_left (of_int a) 24)
+         (add (shift_left (of_int b) 20)
+            (add (shift_left (of_int op) 16)
+               (of_int c))))
+    
+  let asm1 = function
+    | F0 (ric, R a, D,   R c) -> build 0b0000 a 0 (from_ric ric) c
+    | F0 (ric, R a, R b, R c) -> build 0b0000 a b (from_ric ric) c
+    | F1 (ric, R a, D,    im) -> build 0b0100 a 0 (from_ric ric) im
+    | F1 (ric, R a, R b,  im) -> build 0b0100 a b (from_ric ric) im
+    | F2 (Ildw, R a, R b, off) -> build 0b1000 a b 0 off
+    | F2 (Istw, R a, R b, off) -> build 0b1010 a b 0 off
+    | F3 (bic, off) ->            build 0b1110 (from_bic bic) 0 0 off
+    | FL (bic, off) ->            build 0b1111 (from_bic bic) 0 0 off
+    | _ -> zero;;
+  
+  let asm src = List.map asm1 src;;
+
   let test () =
-    let imov = F0 (Imov, R 0, D,   R 2) in
-    let imov = F1 (Imov, R 0, D,   123) in
-    let ildw = F2 (Ildw, R 0, R 1, 123) in
-    let ibeq = F3 (Ibeq, 123) in
-    let ibl  = FL (Ib,   123) in            (* BL *)
-    ();;
+    let obj = asm src in
+    Dump.print_mem (Array.of_list obj);;
 end;;
+(*
+LDW R0, SB, x 80D00004 R0 := x x 1
+LDW R1, SB, y 81D00008 R1 := y x, y 2
+MUL R0, R0, R1 000A0001 R0 := R0*R1 x*y 1
+LDW R1, SB, z 81D0000C R1 := z x*y, z 2
+LDW R2, SB, w 82D00010 R2 := w x*y, z, w 3
+MUL R1, R1, R2 011A0002 R1 := R1 * R2 x*y, z*w 2
+ADD R0, R0, R1 00080001 R0 := R0 + R1 x*y + z*w 1
+STW R0, SB, u A0D00000 u := R0 - 0
+ *)
 
 module Emulator = struct
   exception Not_found;;
-
-  let zero = 0n;;
+  
   let lsb  = shift_left (of_int 1) 31;;
   
   let ir = ref zero;;
@@ -248,8 +307,7 @@ module Emulator = struct
               | Isa.Ibpl -> not !n
               | Isa.Ibne -> not !z
               | Isa.Ibge -> not !n
-              | Isa.Ibgt -> not (!n || !z)
-              | _ -> raise Not_found in
+              | Isa.Ibgt -> not (!n || !z) in
             if tmp then
               pc := of_int off
             else
@@ -257,36 +315,18 @@ module Emulator = struct
           end
     end;;
   
-  let to_hl i =
-    let h = to_int (shift_right_logical i 16) in
-    let l = to_int (logand i (of_int 0xFFFF)) in
-    (h, l);;
-
-  let to_hex i = 
-    match (to_hl i) with
-    | (a, b) -> Printf.sprintf "%04X%04X" a b;;
-  
   let print_reg () =
     Printf.printf "IR:%s PC:%s N:%B Z:%B\n"
-      (to_hex !ir) (to_hex !pc) !n !z;
+      (Dump.to_hex !ir) (Dump.to_hex !pc) !n !z;
     Printf.printf "R0:%s R1:%s R2:%s R3:%s\n"
-      (to_hex r.(0)) (to_hex r.(1)) (to_hex r.(2)) (to_hex r.(3));
+      (Dump.to_hex r.(0)) (Dump.to_hex r.(1)) (Dump.to_hex r.(2)) (Dump.to_hex r.(3));
     Printf.printf "R4:%s R5:%s R6:%s R7:%s\n"
-      (to_hex r.(4)) (to_hex r.(5)) (to_hex r.(6)) (to_hex r.(7));
+      (Dump.to_hex r.(4)) (Dump.to_hex r.(5)) (Dump.to_hex r.(6)) (Dump.to_hex r.(7));
     Printf.printf "RA:%s RB:%s RC:%s RH:%s\n"
-      (to_hex !ra) (to_hex !rb) (to_hex !rc) (to_hex !rh);;
+      (Dump.to_hex !ra) (Dump.to_hex !rb) (Dump.to_hex !rc) (Dump.to_hex !rh);;
   
-  let print_mem () =
-    for i = 0 to memsize - 1 do
-      if i mod 8 == 0 then
-        Printf.printf "%04X " i;
-      Printf.printf "%s " (to_hex mem.(i));
-      if (i + 1) mod 8 == 0 then
-        Printf.printf "\n";
-    done
-    
   let test () =
-    Printf.printf "%s\n" (to_hex mem.(0));;
+    Printf.printf "%s\n" (Dump.to_hex mem.(0));;
 end;;
 
 (* END *)
