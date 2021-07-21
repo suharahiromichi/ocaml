@@ -118,11 +118,11 @@ module Isa = struct
     | D;;                                   (* dummy *)
   
   type instr =
-    | F0  of ric * register * register * register
-    | F1  of ric * register * register * int
-    | F2  of mic * register * register * int
-    | F3  of bic * int
-    | FBL of int;;                   (* call / BL : Branch and Link *)
+    | F0 of ric * register * register * register
+    | F1 of ric * register * register * int
+    | F2 of mic * register * register * int
+    | F3 of bic * int
+    | FL of bic * int;;              (* call / BL : Branch and Link *)
   
   type statement = instr;;
 end;;
@@ -135,7 +135,7 @@ module Assembler = struct
     let imov = F1 (Imov, R 0, D,   123) in
     let ildw = F2 (Ildw, R 0, R 1, 123) in
     let ibeq = F3 (Ibeq, 123) in
-    let ibl  = FBL 123 in                   (* BL *)
+    let ibl  = FL (Ib,   123) in            (* BL *)
     ();;
 end;;
 
@@ -188,22 +188,17 @@ module Emulator = struct
       Printf.printf "q=%x\n" q;
       Printf.printf "v=%x\n" v;
       
-      if (p = 0) then                         (* 0quv *)
+      (* pquv = 0quv *)
+      if (p = 0) then                      (* Register instructions *)
         begin
           rb := r.(b);
           if (q = 0) then
             rc := r.(c)
-          else if (v = 0) then
-            rc := of_int im
-          else
-            rc := add (of_int im) (shift_left (of_int 0xFFFF) 16);
+          else                              (* if (v = 0) *)
+            rc := of_int im;
           
           let tmp = match (Isa.to_ric op) with
-            | Isa.Imov ->
-               if (u = 0) then
-                 !rc
-               else
-                 !rh
+            | Isa.Imov -> !rc               (* if (u = 0) *)
             | Isa.Ilsl -> shift_left !rb (to_int !rc)
             | Isa.Iasr -> shift_right !rb (to_int !rc)
             | Isa.Iror -> zero              (* 未実装 *)
@@ -223,21 +218,44 @@ module Emulator = struct
           end
         end
       else
-        if (q = 0) then                       (* 10uv *)
-          let adr = (to_int r.(b) + off) / 4 in
-          if (u = 0) then                     (* LOAD *)
+        (* pquv = 10uv *)
+        if (q = 0) then                     (* Memory instructions *)
+          let adr = to_int r.(b) + off in
+          if (u = 0) then                   (* LDW *)
             begin
               let tmp = mem.(adr) in
               r.(a) <- tmp;
               z := tmp = zero;
               n := (logand tmp lsb) = zero
             end
-          else                                (* STORE *)
+          else                              (* STW *)
             mem.(adr) <- r.(a)
-        else                                  (* 11uv *)
-          ()
-    end
-  ;;
+      
+        (* pquv = 11uv *)
+        else                                (* Branch instructions *)
+          begin
+            if (v = 0) then
+              ()                            (* Not Link *)
+            else
+              r.(15) <- !pc;                (* Link *)
+            
+            let tmp = match (Isa.to_bic op) with
+              | Isa.Ibmi -> !n
+              | Isa.Ibeq -> !z
+              | Isa.Iblt -> !n
+              | Isa.Ible -> !n || !z
+              | Isa.Ib   -> true
+              | Isa.Ibpl -> not !n
+              | Isa.Ibne -> not !z
+              | Isa.Ibge -> not !n
+              | Isa.Ibgt -> not (!n || !z)
+              | _ -> raise Not_found in
+            if tmp then
+              pc := of_int off
+            else
+              ()
+          end
+    end;;
   
   let to_hl i =
     let h = to_int (shift_right_logical i 16) in
