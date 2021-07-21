@@ -1,8 +1,15 @@
 open Nativeint;;
 
 module Isa = struct
-  type ric =                               (* Register instructions *)
-    | Imov
+  type rmb =
+    | Eic                                  (* XXXX *)
+    | Ric                                  (* Register instructions *)
+    | Mic                                  (* Memory instructions *)
+    | Bic;;                                (* Branch instructions *)
+
+  type opcode = 
+    | Inop                                 (* XXXX *)
+    | Imov                                 (* Register instructions *)
     | Ilsl
     | Iasr
     | Iror
@@ -12,53 +19,12 @@ module Isa = struct
     | Ixor
     | Iadd
     | Isub
-    | Icmp
+    | Icmp                                  (* Isub *)
     | Imul
-    | Idiv;;
-  
-  let to_ric = function
-    |  0 -> Imov
-    |  1 -> Ilsl
-    |  2 -> Iasr
-    |  3 -> Iror
-    |  4 -> Iand
-    |  5 -> Iann
-    |  6 -> Iior
-    |  7 -> Ixor
-    |  8 -> Iadd
-    |  9 -> Isub
-    | 10 -> Imul
-    | 11 -> Idiv;;
-  
-  let from_ric = function
-    | Imov ->  0
-    | Ilsl ->  1
-    | Iasr ->  2
-    | Iror ->  3
-    | Iand ->  4
-    | Iann ->  5
-    | Iior ->  6
-    | Ixor ->  7
-    | Iadd ->  8
-    | Isub ->  9
-    | Icmp ->  9                            (* SUB *)
-    | Imul -> 10
-    | Idiv -> 11;;
-  
-  type mic =
-    | Ildw
-    | Istw;;
-  
-  let to_mic = function
-    | 0 -> Ildw
-    | 1 -> Istw;;
-
-  let from_mic = function
-    | Ildw -> 0
-    | Istw -> 1;;
-
-  type bic =
-    | Ibmi
+    | Idiv
+    | Ildw                                  (* Memory instructions *)
+    | Istw
+    | Ibmi                                  (* Branch instructions *)
     | Ibeq
     (*  | Ibcs  *)
     (*  | Ibvs  *)
@@ -73,76 +39,98 @@ module Isa = struct
     (*  | Ibhi  *)
     | Ibge
     | Ibgt
-    | Icall;;                               (* call Branch and Link *)
+    | Ibl;;                                 (* Branch and Link *)
   
-  let to_bic = function
-    |  0 -> Ibmi
-    |  1 -> Ibeq
-    (*  | Ibcs  *)
-    (*  | Ibvs  *)
-    (*  | Ibls  *)
-    |  5 -> Iblt
-    |  6 -> Ible
-    |  7 -> Ib  
-    |  8 -> Ibpl
-    |  9 -> Ibne
-    (*  | Ibcc  *)
-    (*  | Ibvc  *)
-    (*  | Ibhi  *)
-    | 13 -> Ibge
-    | 14 -> Ibgt
-    | 23 -> Icall;;                         (* 0x10111 *)
+  let from_opc = function
+    | Inop ->  0, Eic, false
+    (* Register instructions *)
+    | Imov ->  0, Ric, false
+    | Ilsl ->  1, Ric, false
+    | Iasr ->  2, Ric, false
+    | Iror ->  3, Ric, false
+    | Iand ->  4, Ric, false
+    | Iann ->  5, Ric, false
+    | Iior ->  6, Ric, false
+    | Ixor ->  7, Ric, false
+    | Iadd ->  8, Ric, false
+    | Isub ->  9, Ric, false
+    | Icmp ->  9, Ric, false                (* Isub *)
+    | Imul -> 10, Ric, false
+    | Idiv -> 11, Ric, false
+    (* Memory instructions *)
+    | Ildw ->  0, Mic, false
+    | Istw ->  1, Mic, false
+    (* Branch instructions *)
+    | Ibmi ->  0, Bic, false
+    | Ibeq ->  1, Bic, false
+    | Iblt ->  5, Bic, false
+    | Ible ->  6, Bic, false
+    | Ib   ->  7, Bic, false
+    | Ibpl ->  8, Bic, false
+    | Ibne ->  9, Bic, false
+    | Ibge -> 13, Bic, false
+    | Ibgt -> 14, Bic, false
+    | Ibl  ->  7, Bic, true;;             (* call / Branch and Link *)
   
-  let from_bic = function
-    | Ibmi ->  0
-    | Ibeq ->  1
-    (*  | Ibcs  *)
-    (*  | Ibvs  *)
-    (*  | Ibls  *)
-    | Iblt ->  5
-    | Ible ->  6
-    | Ib   ->  7
-    | Ibpl ->  8
-    | Ibne ->  9
-    (*  | Ibcc  *)
-    (*  | Ibvc  *)
-    (*  | Ibhi  *)
-    | Ibge -> 13
-    | Ibgt -> 14
-    | Icall  -> 23;;                        (* 0x10111 *)
+  let to_opc = function
+    (* Register instructions *)
+    |  0, Ric, _     -> Imov
+    |  1, Ric, _     -> Ilsl
+    |  2, Ric, _     -> Iasr
+    |  3, Ric, _     -> Iror
+    |  4, Ric, _     -> Iand
+    |  5, Ric, _     -> Iann
+    |  6, Ric, _     -> Iior
+    |  7, Ric, _     -> Ixor
+    |  8, Ric, _     -> Iadd
+    |  9, Ric, _     -> Isub
+    | 10, Ric, _     -> Imul
+    | 11, Ric, _     -> Idiv
+    (* Memory instructions *)
+    |  0, Mic, _     -> Ildw
+    |  1, Mic, _     -> Istw
+    (* Branch instructions *)
+    |  0, Bic, _     -> Ibmi
+    |  1, Bic, _     -> Ibeq
+    |  5, Bic, _     -> Iblt
+    |  6, Bic, _     -> Ible
+    |  7, Bic, false -> Ib  
+    |  8, Bic, _     -> Ibpl
+    |  9, Bic, _     -> Ibne
+    | 13, Bic, _     -> Ibge
+    | 14, Bic, _     -> Ibgt
+    |  7, Bic, true  -> Ibl               (* call / Branch and Link *)
+    |  _,   _, _     -> Inop;;            (* XXXX *)
   
   type register =
     | R of int
     | D;;                                   (* dummy *)
   
-  type instr =
-    | F0' of ric * register * register
-    | F0  of ric * register * register * register
-    | F1' of ric * register * int
-    | F1  of ric * register * register * int
-    | F2  of mic * register * register * int
-    | F3  of bic * register
-    | F3' of bic * int;;
+  type operand =
+    | OR of register * register * register
+    | OI of register * register * int
+    | OL of register * register * string;;
   
-  type statement = string * instr;;
+  type instr = opcode * operand;;
+  
+  type statement = string * opcode * operand;;
 end;;
 
-module Asm = struct
+open Isa;;
+
+module Assembler = struct
   let test () =
-    let imov = "label", Isa.F0' (Isa.Imov, Isa.R 0, Isa.R 1) in
-    let imov = "label", Isa.F1' (Isa.Imov, Isa.R 0, 1234) in
-    let imov = "label", Isa.F0  (Isa.Imov, Isa.R 0, Isa.D,   Isa.R 1) in
-    let imov = "label", Isa.F1  (Isa.Imov, Isa.R 0, Isa.D,   1234) in
-    let iadd = "label", Isa.F0  (Isa.Iadd, Isa.R 0, Isa.R 1, Isa.R 2) in
-    let iadd = "label", Isa.F1  (Isa.Iadd, Isa.R 0, Isa.R 1, 1234) in
-    let ildw = "label", Isa.F2  (Isa.Ildw, Isa.R 0, Isa.R 1, 1234) in
-    let istw = "label", Isa.F2  (Isa.Istw, Isa.R 0, Isa.R 1, 1234) in
-    let ib   = "label", Isa.F3  (Isa.Ib,   Isa.R 0) in
-    let ib   = "label", Isa.F3' (Isa.Ib,   1234) in
+    let imov = "label1", Isa.Imov, Isa.OR (Isa.R 0, Isa.D, Isa.R 2) in
+
+    let imov = "label1", Imov, OR (R 0, D, R 2) in
+    let imov = "label1", Imov, OI (R 0, D, 1234) in
+    let imov = "label1", Imov, OL (R 0, D, "label2") in
     ();;
 end;;
 
 module Emulator = struct
+  exception Not_found;;
+
   let zero = 0n;;
   let lsb  = shift_left (of_int 1) 31;;
   
@@ -199,7 +187,7 @@ module Emulator = struct
           else
             rc := add (of_int im) (shift_left (of_int 0xFFFF) 16);
           
-          let tmp = match (Isa.to_ric op) with
+          let tmp = match (Isa.to_opc (op, Ric, false)) with
             | Isa.Imov ->
                if (u = 0) then
                  !rc
@@ -215,7 +203,8 @@ module Emulator = struct
             | Isa.Iadd -> add !rb !rc
             | Isa.Isub -> sub !rb !rc
             | Isa.Imul -> mul !rb !rc
-            | Isa.Idiv -> div !rb !rc in
+            | Isa.Idiv -> div !rb !rc
+            | _ -> raise Not_found in
           begin
             r.(a) <- tmp;
             z := tmp = zero;
@@ -273,4 +262,3 @@ module Emulator = struct
 end;;
 
 (* END *)
-
