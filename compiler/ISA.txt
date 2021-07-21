@@ -12,8 +12,10 @@ F1      ADD  Ra,Rb,im                   01__    op
 F2      LDW  Ra,Rb,off                  100_
 F2      STW  Ra,Rb,off                  101_
         
-F3      BEQ  Ra                         110_    cond
-F3'     BEQ  off                        111_    cond
+F3      BEQ  Ra                         1100    cond
+F3'     BEQ  off                        1110    cond
+F3      BL   Ra                         1101    cond=7
+F3'     BL   off                        1111    cond=7
 
 
 op

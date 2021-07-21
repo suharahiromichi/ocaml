@@ -72,7 +72,8 @@ module Isa = struct
     (*  | Ibvc  *)
     (*  | Ibhi  *)
     | Ibge
-    | Ibgt;;
+    | Ibgt
+    | Icall;;                               (* call Branch and Link *)
   
   let to_bic = function
     |  0 -> Ibmi
@@ -89,7 +90,8 @@ module Isa = struct
     (*  | Ibvc  *)
     (*  | Ibhi  *)
     | 13 -> Ibge
-    | 14 -> Ibgt;;
+    | 14 -> Ibgt
+    | 23 -> Icall;;                         (* 0x10111 *)
   
   let from_bic = function
     | Ibmi ->  0
@@ -106,7 +108,8 @@ module Isa = struct
     (*  | Ibvc  *)
     (*  | Ibhi  *)
     | Ibge -> 13
-    | Ibgt -> 14;;
+    | Ibgt -> 14
+    | Icall  -> 23;;                        (* 0x10111 *)
   
   type register =
     | R of int
@@ -126,15 +129,17 @@ end;;
 
 module Asm = struct
   let test () =
-      let imov = "label", Isa.F0' (Isa.Imov, Isa.R 0, Isa.R 1) in
-      let imov = "label", Isa.F1' (Isa.Imov, Isa.R 0, 1234) in
-      let iadd = "label", Isa.F0  (Isa.Iadd, Isa.R 0, Isa.R 1, Isa.R 2) in
-      let iadd = "label", Isa.F1  (Isa.Iadd, Isa.R 0, Isa.R 1, 1234) in
-      let ildw = "label", Isa.F2  (Isa.Ildw, Isa.R 0, Isa.R 1, 1234) in
-      let istw = "label", Isa.F2  (Isa.Istw, Isa.R 0, Isa.R 1, 1234) in
-      let ib   = "label", Isa.F3  (Isa.Ib,   Isa.R 0) in
-      let ib   = "label", Isa.F3' (Isa.Ib,   1234) in
-      ();;
+    let imov = "label", Isa.F0' (Isa.Imov, Isa.R 0, Isa.R 1) in
+    let imov = "label", Isa.F1' (Isa.Imov, Isa.R 0, 1234) in
+    let imov = "label", Isa.F0  (Isa.Imov, Isa.R 0, Isa.D,   Isa.R 1) in
+    let imov = "label", Isa.F1  (Isa.Imov, Isa.R 0, Isa.D,   1234) in
+    let iadd = "label", Isa.F0  (Isa.Iadd, Isa.R 0, Isa.R 1, Isa.R 2) in
+    let iadd = "label", Isa.F1  (Isa.Iadd, Isa.R 0, Isa.R 1, 1234) in
+    let ildw = "label", Isa.F2  (Isa.Ildw, Isa.R 0, Isa.R 1, 1234) in
+    let istw = "label", Isa.F2  (Isa.Istw, Isa.R 0, Isa.R 1, 1234) in
+    let ib   = "label", Isa.F3  (Isa.Ib,   Isa.R 0) in
+    let ib   = "label", Isa.F3' (Isa.Ib,   1234) in
+    ();;
 end;;
 
 module Emulator = struct
