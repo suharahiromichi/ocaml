@@ -33,7 +33,7 @@ module Assembler : sig
   val asm1 : Isa.instr -> nativeint;;
   val asm : Isa.instr list -> nativeint list;;
   val print1 : Isa.instr -> unit;;
-  val print : Isa.instr list -> unit list;;
+  val print : Isa.instr list -> unit;;
 end;;
 
 module Emulator : sig

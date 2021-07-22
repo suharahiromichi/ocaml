@@ -152,7 +152,7 @@ open Isa;;
 
 module Program = struct
   type expr =
-    | Cst of nativeint
+    | Cst of int
     | Var of int
     | Add of expr * expr
     (* | Min *)
@@ -173,6 +173,7 @@ open Program;;
 module Compiler = struct
   let sb = R 13;;
   
+  (* テスト *)
   let src = [
       F1 (Imov, sb, D, 16);               (*  *)
       F2 (Ildw, R 0, sb,  0);             (* x *)
@@ -202,7 +203,7 @@ module Compiler = struct
     end;;
   
   let rec comp_expr = function
-    | Cst n -> []                           (* 未実装 *)
+    | Cst n -> [F1 (Imov, R (inc ()), D,  n)] (* 仮 *)
     | Var v -> [F2 (Ildw, R (inc ()), sb, v)]
     | Add (e1, e2) ->
        let l1 = comp_expr e1 in
@@ -260,7 +261,9 @@ module Assembler = struct
     | _ ->                        Printf.printf "erro\n";;
   
   
-  let print src = List.map print1 src;;  
+  let print src =
+    let _ = List.map print1 src in
+    ()
 end;;
 
 module Emulator = struct
