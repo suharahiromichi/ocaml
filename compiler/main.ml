@@ -1,14 +1,9 @@
 open Nativeint;;
 
-(*
-Risc.Assembler.test ();;
-Risc.Emulator.test ();;
- *)
-
 open Risc;;
 
 let test () =
-  let obj = Assembler.asm Assembler.src in
+  let obj = Assembler.asm (Compiler.comp ()) in
   begin
     Dump.print_mem (Array.of_list obj);
     Emulator.load (obj);

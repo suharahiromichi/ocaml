@@ -150,21 +150,27 @@ end;;
 
 open Isa;;
 
+module Compiler = struct
+  let comp () =
+    let sb = R 13 in
+    
+    (* test code *)
+    
+    let src = [
+        F1 (Imov, sb, D, 16);               (*  *)
+        F2 (Ildw, R 0, sb,  0);             (* x *)
+        F2 (Ildw, R 1, sb,  1);             (* y *)
+        F0 (Imul, R 0, R 0, R 1);           (* x := x * y *)
+        F2 (Ildw, R 1, sb,  2);             (* z *)
+        F2 (Ildw, R 2, sb,  3);             (* w *)
+        F0 (Imul, R 1, R 1, R 2);           (* z := z * w *)
+        F0 (Iadd, R 0, R 0, R 1);           (* x := x + z *)
+        F2 (Istw, R 0, sb,  4)              (* u := x *)
+    ] in
+    src
+end;;
+
 module Assembler = struct
-  let sb = R 13;;
-  
-  let src = [
-      F1 (Imov, sb, D, 16);
-      F2 (Ildw, R 0, sb,  0);               (* x *)
-      F2 (Ildw, R 1, sb,  1);               (* y *)
-      F0 (Imul, R 0, R 0, R 1);             (* x := x * y *)
-      F2 (Ildw, R 1, sb,  2);               (* z *)
-      F2 (Ildw, R 2, sb,  3);               (* w *)
-      F0 (Imul, R 1, R 1, R 2);             (* z := z * w *)
-      F0 (Iadd, R 0, R 0, R 1);             (* x := x + z *)
-      F2 (Istw, R 0, sb,  4)                (* u := x *)
-    ];;
-  
   let build p a b op c =
     add (shift_left (of_int p) 28)
       (add (shift_left (of_int a) 24)
@@ -185,16 +191,6 @@ module Assembler = struct
   
   let asm src = List.map asm1 src;;
 end;;
-(*
-LDW R0, SB, x 80D00004 R0 := x x 1
-LDW R1, SB, y 81D00008 R1 := y x, y 2
-MUL R0, R0, R1 000A0001 R0 := R0*R1 x*y 1
-LDW R1, SB, z 81D0000C R1 := z x*y, z 2
-LDW R2, SB, w 82D00010 R2 := w x*y, z, w 3
-MUL R1, R1, R2 011A0002 R1 := R1 * R2 x*y, z*w 2
-ADD R0, R0, R1 00080001 R0 := R0 + R1 x*y + z*w 1
-STW R0, SB, u A0D00000 u := R0 - 0
- *)
 
 module Emulator = struct
   exception Not_found;;
@@ -214,12 +210,6 @@ module Emulator = struct
   let rh = ref zero;;
   let memsize = 32;;
   let mem = Array.make memsize zero;;
-  (*
-  mem.(0) <- add (of_int 0x02345678)  (shift_left (of_int 0x5) 28);;
-  mem.(1) <- of_int 0x10;;
-  mem.(2) <- of_int 0x20;;
-  mem.(3) <- of_int 0x30;;
-   *)
   
   let load obj =
     begin
@@ -359,9 +349,6 @@ module Emulator = struct
       (Dump.to_hex r.(12)) (Dump.to_hex r.(13)) (Dump.to_hex r.(14)) (Dump.to_hex r.(15));
     Printf.printf "RA:%s RB:%s RC:%s RH:%s\n"
       (Dump.to_hex !ra) (Dump.to_hex !rb) (Dump.to_hex !rc) (Dump.to_hex !rh);;
-  
-  let test () =
-    Printf.printf "%s\n" (Dump.to_hex mem.(0));;
 end;;
 
 (* END *)
