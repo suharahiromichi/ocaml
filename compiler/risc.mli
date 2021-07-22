@@ -19,13 +19,21 @@ module Dump : sig
   val print_mem : nativeint array -> unit;;
 end;;
 
+module Program : sig
+  type expr;;
+  type stat;;
+  val src : stat;;
+end;;
+
 module Compiler : sig
-  val comp : unit -> Isa.instr list;;
+  val comp : Program.stat -> Isa.instr list;;
 end;;
 
 module Assembler : sig
   val asm1 : Isa.instr -> nativeint;;
   val asm : Isa.instr list -> nativeint list;;
+  val print1 : Isa.instr -> unit;;
+  val print : Isa.instr list -> unit list;;
 end;;
 
 module Emulator : sig

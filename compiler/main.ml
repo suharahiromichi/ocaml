@@ -3,8 +3,11 @@ open Nativeint;;
 open Risc;;
 
 let test () =
-  let obj = Assembler.asm (Compiler.comp ()) in
+  let src = Compiler.comp (Program.src) in
+  let obj = Assembler.asm src in
   begin
+    Assembler.print src;
+    
     Dump.print_mem (Array.of_list obj);
     Emulator.load (obj);
     Emulator.set 16 (of_int 2);           (* x *)

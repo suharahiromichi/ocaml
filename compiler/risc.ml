@@ -150,24 +150,81 @@ end;;
 
 open Isa;;
 
+module Program = struct
+  type expr =
+    | Cst of nativeint
+    | Var of int
+    | Add of expr * expr
+    (* | Min *)
+    | Mul of expr * expr;;
+
+  type stat =
+    | Stat of int * expr;;
+
+  let src =
+    Stat (4,                                (* u := *)
+          (Add                              (* + *)
+             ((Mul (Var 0, Var 1)),         (* x * y *)
+              (Mul (Var 2, Var 3)))));;     (* z * w *)
+end;;
+
+open Program;;
+
 module Compiler = struct
-  let comp () =
-    let sb = R 13 in
-    
-    (* test code *)
-    
-    let src = [
-        F1 (Imov, sb, D, 16);               (*  *)
-        F2 (Ildw, R 0, sb,  0);             (* x *)
-        F2 (Ildw, R 1, sb,  1);             (* y *)
-        F0 (Imul, R 0, R 0, R 1);           (* x := x * y *)
-        F2 (Ildw, R 1, sb,  2);             (* z *)
-        F2 (Ildw, R 2, sb,  3);             (* w *)
-        F0 (Imul, R 1, R 1, R 2);           (* z := z * w *)
-        F0 (Iadd, R 0, R 0, R 1);           (* x := x + z *)
-        F2 (Istw, R 0, sb,  4)              (* u := x *)
-    ] in
-    src
+  let sb = R 13;;
+  
+  let src = [
+      F1 (Imov, sb, D, 16);               (*  *)
+      F2 (Ildw, R 0, sb,  0);             (* x *)
+      F2 (Ildw, R 1, sb,  1);             (* y *)
+      F0 (Imul, R 0, R 0, R 1);           (* x := x * y *)
+      F2 (Ildw, R 1, sb,  2);             (* z *)
+      F2 (Ildw, R 2, sb,  3);             (* w *)
+      F0 (Imul, R 1, R 1, R 2);           (* z := z * w *)
+      F0 (Iadd, R 0, R 0, R 1);           (* x := x + z *)
+      F2 (Istw, R 0, sb,  4)              (* u := x *)
+    ];;
+  
+  let rh = ref 0;;
+  
+  let inc () =
+    let r = !rh in
+    begin
+      rh := r + 1;
+      r
+    end;;
+  
+  let dec () =
+    let r = !rh in
+    begin
+      rh := r - 1;
+      r
+    end;;
+  
+  let rec comp_expr = function
+    | Cst n -> []                           (* 未実装 *)
+    | Var v -> [F2 (Ildw, R (inc ()), sb, v)]
+    | Add (e1, e2) ->
+       let l1 = comp_expr e1 in
+       let l2 = comp_expr e2 in
+       let l3 = [F0 (Iadd, R (dec () - 2), R (!rh - 2), R (!rh - 1))] in
+       l1 @ l2 @ l3
+    | Mul (e1, e2) ->
+       let l1 = comp_expr e1 in
+       let l2 = comp_expr e2 in
+       let l3 = [F0 (Imul, R (dec () - 2), R (!rh - 2), R (!rh - 1))] in
+       l1 @ l2 @ l3;;
+  
+  let comp = function
+    | Stat (v, expr) ->
+       let l1 = [F1 (Imov, sb, D, 16)] in
+       let l2 = comp_expr expr in
+       let l3 = [F2 (Istw, R (!rh - 1), sb, v)] in
+       l1 @ l2 @ l3;;
+(*
+  let comp = function
+    | _ -> src;;
+ *)
 end;;
 
 module Assembler = struct
@@ -190,6 +247,20 @@ module Assembler = struct
     | _ -> zero;;
   
   let asm src = List.map asm1 src;;
+
+  let print1 = function  
+    | F0 (ric, R a, D,   R c) -> Printf.printf "F0 %d R%d D   R%d\n" (from_ric ric) a c;
+    | F0 (ric, R a, R b, R c) -> Printf.printf "F0 %d R%d R%d R%d\n" (from_ric ric) a b c;
+    | F1 (ric, R a, D,    im) -> Printf.printf "F1 %d R%d D   im=%d\n" (from_ric ric) a im;
+    | F1 (ric, R a, R b,  im) -> Printf.printf "F1 %d R%d R%d im=%d\n" (from_ric ric) a b im;
+    | F2 (Ildw, R a, R b, off) -> Printf.printf "F2 LDW R%d R%d off=%d\n" a b off
+    | F2 (Istw, R a, R b, off) -> Printf.printf "F2 STW R%d R%d off=%d\n" a b off
+    | F3 (bic, off) ->            Printf.printf "F2 %d off=%d\n" (from_bic bic) off
+    | FL (bic, off) ->            Printf.printf "F2 %d off=%d\n" (from_bic bic) off
+    | _ ->                        Printf.printf "erro\n";;
+  
+  
+  let print src = List.map print1 src;;  
 end;;
 
 module Emulator = struct
