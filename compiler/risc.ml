@@ -152,6 +152,7 @@ open Isa;;
 
 module Assembler = struct
   let sb = R 13;;
+  
   let src = [
       F1 (Imov, sb, D, 16);
       F2 (Ildw, R 0, sb,  0);               (* x *)
@@ -169,7 +170,7 @@ module Assembler = struct
       (add (shift_left (of_int a) 24)
          (add (shift_left (of_int b) 20)
             (add (shift_left (of_int op) 16)
-               (of_int c))))
+               (of_int c))));;
     
   let asm1 = function
     | F0 (ric, R a, D,   R c) -> build 0b0000 a 0 (from_ric ric) c
@@ -183,10 +184,6 @@ module Assembler = struct
     | _ -> zero;;
   
   let asm src = List.map asm1 src;;
-
-  let test () =
-    let obj = asm src in
-    Dump.print_mem (Array.of_list obj);;
 end;;
 (*
 LDW R0, SB, x 80D00004 R0 := x x 1
@@ -243,6 +240,15 @@ module Emulator = struct
   
   let dump () =
     Dump.print_mem mem;;
+  
+  let reset () =
+    begin
+      ir := zero;
+      pc := zero;
+      n := false;
+      z := false;
+      Array.fill r 0 16 zero
+    end;;
   
   let inc x = x := succ !x;;
   

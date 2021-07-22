@@ -23,7 +23,6 @@ module Assembler : sig
   val src : Isa.instr list;;
   val asm1 : Isa.instr -> nativeint;;
   val asm : Isa.instr list -> nativeint list;;
-  val test : unit -> unit;;
 end;;
 
 module Emulator : sig
@@ -38,9 +37,10 @@ module Emulator : sig
   val rh : nativeint ref;;
   val mem : nativeint array;;               (* memory *)
   val load : nativeint list -> unit;;
-  val dump : unit -> unit;;
   val set : int -> nativeint -> unit;;
   
+  val dump : unit -> unit;;
+  val reset : unit -> unit;;
   val inc : nativeint ref -> unit;;
   val exec : unit -> unit;;
   
