@@ -250,16 +250,24 @@ module Assembler = struct
   let asm src = List.map asm1 src;;
 
   let print1 = function  
-    | F0 (ric, R a, D,   R c) -> Printf.printf "F0 %d R%d D   R%d\n" (from_ric ric) a c;
-    | F0 (ric, R a, R b, R c) -> Printf.printf "F0 %d R%d R%d R%d\n" (from_ric ric) a b c;
-    | F1 (ric, R a, D,    im) -> Printf.printf "F1 %d R%d D   im=%d\n" (from_ric ric) a im;
-    | F1 (ric, R a, R b,  im) -> Printf.printf "F1 %d R%d R%d im=%d\n" (from_ric ric) a b im;
-    | F2 (Ildw, R a, R b, off) -> Printf.printf "F2 LDW R%d R%d off=%d\n" a b off
-    | F2 (Istw, R a, R b, off) -> Printf.printf "F2 STW R%d R%d off=%d\n" a b off
-    | F3 (bic, off) ->            Printf.printf "F2 %d off=%d\n" (from_bic bic) off
-    | FL (bic, off) ->            Printf.printf "F2 %d off=%d\n" (from_bic bic) off
-    | _ ->                        Printf.printf "erro\n";;
-  
+    | F0 (ric, R a, D,   R c) ->
+       Printf.printf "F0 %d R%d D   R%d\n" (from_ric ric) a c;
+    | F0 (ric, R a, R b, R c) ->
+       Printf.printf "F0 %d R%d R%d R%d\n" (from_ric ric) a b c;
+    | F1 (ric, R a, D,    im) ->
+       Printf.printf "F1 %d R%d D   im=%d\n" (from_ric ric) a im;
+    | F1 (ric, R a, R b,  im) ->
+       Printf.printf "F1 %d R%d R%d im=%d\n" (from_ric ric) a b im;
+    | F2 (Ildw, R a, R b, off) ->
+       Printf.printf "F2 LDW R%d R%d off=%d\n" a b off
+    | F2 (Istw, R a, R b, off) ->
+       Printf.printf "F2 STW R%d R%d off=%d\n" a b off
+    | F3 (bic, off) ->
+       Printf.printf "F2 %d off=%d\n" (from_bic bic) off
+    | FL (bic, off) ->
+       Printf.printf "F2 %d off=%d\n" (from_bic bic) off
+    | _ ->
+       Printf.printf "erro\n";;
   
   let print src =
     let _ = List.map print1 src in
