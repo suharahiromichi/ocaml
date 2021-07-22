@@ -201,6 +201,7 @@ STW R0, SB, u A0D00000 u := R0 - 0
 
 module Emulator = struct
   exception Not_found;;
+  exception Out_of_memory;;
   
   let lsb  = shift_left (of_int 1) 31;;
   
@@ -208,19 +209,41 @@ module Emulator = struct
   let pc = ref zero;;
   let n = ref false;;
   let z = ref false;;
-  let r = [| zero; zero; zero; zero; zero; zero; zero; zero |];;
+  let r = [| zero; zero; zero; zero; zero; zero; zero; zero;
+             zero; zero; zero; zero; zero; zero; zero; zero |];;
   let ra = ref zero;;
   let rb = ref zero;;
   let rc = ref zero;;
   let rh = ref zero;;
   let memsize = 32;;
   let mem = Array.make memsize zero;;
-  
+  (*
   mem.(0) <- add (of_int 0x02345678)  (shift_left (of_int 0x5) 28);;
   mem.(1) <- of_int 0x10;;
   mem.(2) <- of_int 0x20;;
   mem.(3) <- of_int 0x30;;
+   *)
+  
+  let load obj =
+    begin
+      Array.fill mem 0 memsize zero;
+      let obj = Array.of_list obj in
+      let len = Array.length obj in
+      if (len > memsize) then
+        raise Out_of_memory
+      else
+        Array.blit obj 0 mem 0 len
+    end;;
 
+  let set adr dat =
+    if (adr >= memsize) then 
+      raise Out_of_memory
+    else
+      mem.(adr) <- dat;;
+  
+  let dump () =
+    Dump.print_mem mem;;
+  
   let inc x = x := succ !x;;
   
   let exec () =
@@ -246,6 +269,7 @@ module Emulator = struct
       Printf.printf "p=%x\n" p;
       Printf.printf "q=%x\n" q;
       Printf.printf "v=%x\n" v;
+      Printf.printf "off=%x\n" off;      
       
       (* pquv = 0quv *)
       if (p = 0) then                      (* Register instructions *)
@@ -272,6 +296,7 @@ module Emulator = struct
             | _ -> raise Not_found in
           begin
             r.(a) <- tmp;
+
             z := tmp = zero;
             n := (logand tmp lsb) = zero
           end
@@ -322,6 +347,10 @@ module Emulator = struct
       (Dump.to_hex r.(0)) (Dump.to_hex r.(1)) (Dump.to_hex r.(2)) (Dump.to_hex r.(3));
     Printf.printf "R4:%s R5:%s R6:%s R7:%s\n"
       (Dump.to_hex r.(4)) (Dump.to_hex r.(5)) (Dump.to_hex r.(6)) (Dump.to_hex r.(7));
+    Printf.printf "R8:%s R9:%s R10:%s R11:%s\n"
+      (Dump.to_hex r.(8)) (Dump.to_hex r.(9)) (Dump.to_hex r.(10)) (Dump.to_hex r.(11));
+    Printf.printf "R12:%s R13:%s R14:%s R15:%s\n"
+      (Dump.to_hex r.(12)) (Dump.to_hex r.(13)) (Dump.to_hex r.(14)) (Dump.to_hex r.(15));
     Printf.printf "RA:%s RB:%s RC:%s RH:%s\n"
       (Dump.to_hex !ra) (Dump.to_hex !rb) (Dump.to_hex !rc) (Dump.to_hex !rh);;
   

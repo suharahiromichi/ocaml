@@ -27,16 +27,19 @@ module Assembler : sig
 end;;
 
 module Emulator : sig
-  val ir : nativeint ref;;                      (* instruction register *)
-  val pc : nativeint ref;;                      (* program counter *)
+  val ir : nativeint ref;;                  (* instruction register *)
+  val pc : nativeint ref;;                  (* program counter *)
   val n : bool ref;;
   val z : bool ref;;
-  val r : nativeint array;;                     (* registers *)
+  val r : nativeint array;;                 (* registers *)
   val ra : nativeint ref;;
   val rb : nativeint ref;;
   val rc : nativeint ref;;
   val rh : nativeint ref;;
-  val mem : nativeint array;;                   (* memory *)
+  val mem : nativeint array;;               (* memory *)
+  val load : nativeint list -> unit;;
+  val dump : unit -> unit;;
+  val set : int -> nativeint -> unit;;
   
   val inc : nativeint ref -> unit;;
   val exec : unit -> unit;;
