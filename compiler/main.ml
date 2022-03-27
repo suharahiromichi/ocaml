@@ -1,5 +1,6 @@
-open Nativeint;;
+#load "risc.cmo";;
 
+open Nativeint;;
 open Risc;;
 
 let test () =
