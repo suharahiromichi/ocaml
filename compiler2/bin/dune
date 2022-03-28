@@ -1,0 +1,9 @@
+(executable
+ (public_name compiler2)
+ (name main)
+ (libraries risc))
+(env
+ (dev
+  (flags (:standard -warn-error -A))))
+  
+    
